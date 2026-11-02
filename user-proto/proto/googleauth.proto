@@ -1,0 +1,37 @@
+// Use proto3 syntax for modern features and Go-friendly code generation.
+syntax = "proto3";
+
+package googleauth.v1;
+
+// Set the Go package path for the generated code.
+// The `pb` is a common convention for protobuf packages.
+option go_package = ".;pb";
+
+message GoogleUserInfo {
+  string email = 1;
+  string name = 2;
+  string picture = 3;
+  string sub = 4;  // Google user ID
+}
+
+message GoogleLoginRequest {
+  string id_token = 1;           // For ID token flow
+  string access_token = 2;       // For access token flow
+  GoogleUserInfo user_info = 3;  // For access token flow
+}
+
+message GoogleAuthTokens {
+  string access_token = 1;
+  int64 expires_at = 2;
+  string refresh_token = 3;
+  int64 refresh_expires_at = 4;
+}
+
+message GoogleAuthResponse {
+  GoogleAuthTokens tokens = 2;
+}
+
+
+service GoogleAuthService {
+  rpc GoogleLogin(GoogleLoginRequest) returns (GoogleAuthResponse);
+}

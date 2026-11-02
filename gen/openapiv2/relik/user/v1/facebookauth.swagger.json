@@ -1,0 +1,95 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "relik/user/v1/facebookauth.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "FacebookAuthService"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {},
+  "definitions": {
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "v1FacebookAuthResponse": {
+      "type": "object",
+      "properties": {
+        "tokens": {
+          "$ref": "#/definitions/v1FacebookAuthTokens"
+        },
+        "profile": {
+          "$ref": "#/definitions/v1FacebookUserProfile"
+        }
+      },
+      "title": "Server response back to frontend"
+    },
+    "v1FacebookAuthTokens": {
+      "type": "object",
+      "properties": {
+        "accessToken": {
+          "type": "string"
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "int64"
+        },
+        "refreshToken": {
+          "type": "string"
+        },
+        "refreshExpiresAt": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "v1FacebookUserProfile": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        }
+      },
+      "title": "Profile object from Facebook"
+    }
+  }
+}

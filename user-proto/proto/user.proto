@@ -1,6 +1,8 @@
 // Use proto3 syntax for modern features and Go-friendly code generation.
 syntax = "proto3";
 
+package user.v1;
+
 // Set the Go package path for the generated code.
 // The `pb` is a common convention for protobuf packages.
 option go_package = ".;pb";
@@ -35,33 +37,55 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
 // Field numbers (1, 2, 3...) are unique identifiers and should never be changed.
 message User {
   string id = 1; // ObjectID as hex string
-  string firstname = 2;
-  string lastname = 3;
-  string email = 4;
-  string password = 5;
-  string accesskey = 6;
-  bool isactive = 7;
+  string email = 2;
+  bool isactive = 3;
+  string createdsource = 4;
+  repeated string userdetailsids = 5;
+
+  string createby = 7;
+  google.protobuf.Timestamp createdat = 8;
+  string updateby = 9;
+  google.protobuf.Timestamp updatedat = 10;
+}
+
+message UserDetails {
+  string id = 1; // ObjectID as hex string
+  bool isdefault = 2;
+  string name = 3;
+  string password = 4;
+  string confirmpassword = 5;
+  string gender = 6;
+  string address = 7;
+  string zipcode = 8;
+  string phone = 9;
+  string city = 10;
+  string state = 11;
+  string country = 12;
+  string dob = 13;
+  bool termofserviceandprivacypolicy = 14;
+  bool subscribenewsletter = 15;
   
-  // Note: We don't include the password hash in the user message
-  // that is sent over the wire for security. It should be handled
-  // internally by the service.
-  
-  string createby = 8;
-  google.protobuf.Timestamp createdat = 9;
-  string updateby = 10;
-  google.protobuf.Timestamp updatedat = 11;
+  string createby = 16;
+  google.protobuf.Timestamp createdat = 17;
+  string updateby = 18;
+  google.protobuf.Timestamp updatedat = 19;
 }
 
 // Request message for creating a new user.
 // We include the raw password here as it will be hashed by the server.
 message CreateUserRequest {
   User user = 1;
+  UserDetails userdetails = 2;
 }
 
 // Response message after a user is created.
 // It returns the newly created User object.
 message CreateUserResponse {
   User user = 1;
+}
+
+message CreateBasicUserResponse {
+  string link = 1;
 }
 
 // Request message for getting a user by their ID.
@@ -85,14 +109,14 @@ message UpdateUserRequest {
 }
 
 message UserUpdate {
-  string firstname = 1;
-  string lastname = 2;
-  string email = 3;
-  string password = 4;
-  string accesskey = 5;
-  string updatedby = 6;
-  google.protobuf.Timestamp updatedat = 7;
-  bool isactive = 8;
+  string email = 1;
+  string password = 2;
+  string accesskey = 3;
+  string updatedby = 4;
+  google.protobuf.Timestamp updatedat = 5;
+  bool isactive = 6;
+  string createdsource = 7;
+  string userdetailsid = 8;
 }
 
 // Response message after a user is updated.
@@ -120,13 +144,11 @@ message DeleteUserResponse {
 
 message userActionRequest {
   string id = 1; // ObjectID as hex string
-  string firstname = 2;
-  string lastname = 3;
-  string email = 4;
-  string password = 5;
-  string accesskey = 6;
-  bool isactive = 7;
-  string module = 8;
+  string email = 2;
+  string password = 3;
+  string accesskey = 4;
+  bool isactive = 5;
+  string module = 6;
 }
 
 message UserActionResponse {
@@ -155,9 +177,16 @@ message Empty {}
 message AuthResponse {
   string userid = 1;
   string email = 2;
-  string firstname = 3;
-  string lastname = 4;
-  string role = 5;
+  string role = 3;
+}
+
+message UserVerificationRequest {
+  string token = 1;
+  string module = 2;
+}
+
+message UserVerificationResponse {
+  bool success = 1;
 }
 
 // Defines the gRPC service with the RPC methods.
@@ -237,7 +266,7 @@ service UserService {
   }
 
   // Create/Register user
-  rpc CreateUser (CreateUserRequest) returns (CreateUserResponse) {
+  rpc CreateUser (CreateUserRequest) returns (CreateBasicUserResponse) {
     option (google.api.http) = {
       post: "/users/register"
       body: "*"
@@ -286,6 +315,101 @@ service UserService {
   rpc RefreshToken (RefreshRequest) returns (LoginResponse) {
     option (google.api.http) = {
       post: "/refresh"
+    };
+  }
+
+  // User Verification
+  rpc UserVerification (UserVerificationRequest) returns (UserVerificationResponse) {
+    option (google.api.http) = {
+      get: "/users/verify/{token}"
+    };
+
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "User Activation Verification (no authentication)";
+    };
+  }
+}
+
+message NotificationIntegrationsRequest {
+  string id = 1;
+}
+
+message NotificationIntegrations {
+  string id = 1;
+  string type = 2;
+  string provider = 3;
+  string sendername = 4;
+  string senderemail = 5;
+
+  // oauth
+  string clientid = 6;
+  string clientsecret = 7;
+  string refreshtoken = 8;
+  string redirecturl = 9;
+  repeated string scopes = 10;
+
+  // smtp
+  string smtphost = 11;
+  int32 smtpport = 12;
+  string smtpusername = 13;
+  string smtppassword = 14;
+
+  string createby = 15;
+  google.protobuf.Timestamp createdat = 16;
+  string updateby = 17;
+  google.protobuf.Timestamp updatedat = 18;
+}
+
+message NotificationEventsRequest {
+  string id = 1;
+  string name = 2;
+}
+
+message NotificationEvents {
+  string id = 1;
+  string type = 2;
+  string name = 3;
+  string subject = 4;
+  string body = 5;
+  string createby = 6;
+  google.protobuf.Timestamp createdat = 7;
+  string updateby = 8;
+  google.protobuf.Timestamp updatedat = 9;
+}
+
+service NotificationService {
+  // Gets a notification integration by their unique ID or provider.
+  rpc GetNotificationIntegrationsById (NotificationIntegrationsRequest) returns (NotificationIntegrations) {
+    option (google.api.http) = {
+      get: "/notification/integrations/{id}"
+    };
+
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Get Notification Integrations by ID";
+      description: "Requires JWT authentication.";
+      security: {
+        security_requirement: {
+          key: "BearerAuth";
+          value: {};
+        }
+      }
+    };
+  }
+
+  rpc GetNotificationEventsById (NotificationEventsRequest) returns (NotificationEvents) {
+    option (google.api.http) = {
+      get: "/notification/events/{id}"
+    };
+
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Get Notification Events by ID";
+      description: "Requires JWT authentication.";
+      security: {
+        security_requirement: {
+          key: "BearerAuth";
+          value: {};
+        }
+      }
     };
   }
 }

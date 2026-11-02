@@ -39,6 +39,7 @@ vendor/
 tmp/
 cache/
 *.bak
+.tmp/
 
 # ---- node_modules (in case shared use) ----
 node_modules/

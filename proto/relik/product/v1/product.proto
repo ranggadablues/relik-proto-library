@@ -1,0 +1,175 @@
+syntax = "proto3";
+
+package relik.product.v1;
+
+option go_package = "github.com/ranggadablues/relik-proto-library/gen/go/relik/product/v1;productv1";
+
+import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+// ✅ Swagger configuration
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    title: "Product Service API"
+    version: "1.0"
+    description: "This service handles product management."
+  }
+  security_definitions: {
+    security: {
+      key: "BearerAuth"
+      value: {
+        type: TYPE_API_KEY
+        in: IN_HEADER
+        name: "Authorization"
+        description: "JWT Authorization header using the Bearer scheme."
+      }
+    }
+  }
+};
+
+// Product message (wire model)
+message Product {
+  string id = 1; // MongoDB ObjectId as hex string
+  string name = 2;
+  string short_description = 3;
+  string description = 4;
+  double price = 5;
+
+  repeated string sizes = 6;
+  repeated string colors = 7;
+
+  // color -> image path/url
+  map<string, string> images = 8;
+
+  string tag = 9;
+  string band = 10;
+}
+
+// Requests / Responses for CRUD
+
+message CreateProductRequest {
+  Product product = 1;
+}
+
+message CreateProductResponse {
+  Product product = 1;
+}
+
+message GetProductByIdRequest {
+  string id = 1;
+}
+
+message GetProductByIdResponse {
+  Product product = 1;
+}
+
+message UpdateProductByIdRequest {
+  string id = 1;
+  Product product = 2;
+}
+
+message UpdateProductByIdResponse {
+  bool success = 1;
+}
+
+message DeleteProductByIdRequest {
+  string id = 1;
+}
+
+message DeleteProductByIdResponse {
+  bool success = 1;
+}
+
+message ListProductsRequest {
+  int32 page_size = 1;
+  string page_token = 2;
+  string tag = 10;
+  string band = 11;
+}
+
+message ListProductsResponse {
+  repeated Product products = 1;
+  string next_page_token = 2;
+}
+
+// gRPC service with CRUD + List
+service ProductService {
+  // Create a new product
+  rpc CreateProduct(CreateProductRequest) returns (CreateProductResponse) {
+    option (google.api.http) = {
+      post: "/products"
+      body: "product"
+    };
+
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Create a new product";
+      description: "Requires JWT authentication.";
+      security: {
+        security_requirement: {
+          key: "BearerAuth";
+          value: {};
+        }
+      }
+    };
+  }
+
+  // Get product by id
+  rpc GetProductById(GetProductByIdRequest) returns (GetProductByIdResponse) {
+    option (google.api.http) = {
+      get: "/products/{id}"
+    };
+
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Get product by ID";
+    };
+  }
+
+  // Update an existing product
+  rpc UpdateProductById(UpdateProductByIdRequest) returns (UpdateProductByIdResponse) {
+    option (google.api.http) = {
+      put: "/products/{id}"
+      body: "product"
+    };
+
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Update an existing product";
+      description: "Requires JWT authentication.";
+      security: {
+        security_requirement: {
+          key: "BearerAuth";
+          value: {};
+        }
+      }
+    };
+  }
+
+  // Delete product by id
+  rpc DeleteProductById(DeleteProductByIdRequest) returns (DeleteProductByIdResponse) {
+    option (google.api.http) = {
+      delete: "/products/{id}"
+    };
+
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Delete a product by ID";
+      description: "Requires JWT authentication.";
+      security: {
+        security_requirement: {
+          key: "BearerAuth";
+          value: {};
+        }
+      }
+    };
+  }
+
+  // List products
+  rpc ListProducts(ListProductsRequest) returns (ListProductsResponse) {
+    option (google.api.http) = {
+      get: "/products"
+    };
+
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "List products";
+    };
+  }
+}
+

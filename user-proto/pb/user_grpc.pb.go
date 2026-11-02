@@ -21,14 +21,15 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	UserService_GetUserById_FullMethodName  = "/UserService/GetUserById"
-	UserService_UpdateUser_FullMethodName   = "/UserService/UpdateUser"
-	UserService_ListUsers_FullMethodName    = "/UserService/ListUsers"
-	UserService_DeleteUser_FullMethodName   = "/UserService/DeleteUser"
-	UserService_CreateUser_FullMethodName   = "/UserService/CreateUser"
-	UserService_GetUser_FullMethodName      = "/UserService/GetUser"
-	UserService_LoginUser_FullMethodName    = "/UserService/LoginUser"
-	UserService_RefreshToken_FullMethodName = "/UserService/RefreshToken"
+	UserService_GetUserById_FullMethodName      = "/user.v1.UserService/GetUserById"
+	UserService_UpdateUser_FullMethodName       = "/user.v1.UserService/UpdateUser"
+	UserService_ListUsers_FullMethodName        = "/user.v1.UserService/ListUsers"
+	UserService_DeleteUser_FullMethodName       = "/user.v1.UserService/DeleteUser"
+	UserService_CreateUser_FullMethodName       = "/user.v1.UserService/CreateUser"
+	UserService_GetUser_FullMethodName          = "/user.v1.UserService/GetUser"
+	UserService_LoginUser_FullMethodName        = "/user.v1.UserService/LoginUser"
+	UserService_RefreshToken_FullMethodName     = "/user.v1.UserService/RefreshToken"
+	UserService_UserVerification_FullMethodName = "/user.v1.UserService/UserVerification"
 )
 
 // UserServiceClient is the client API for UserService service.
@@ -47,7 +48,7 @@ type UserServiceClient interface {
 	// Delete user
 	DeleteUser(ctx context.Context, in *DeleteUserRequest, opts ...grpc.CallOption) (*DeleteUserResponse, error)
 	// Create/Register user
-	CreateUser(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*CreateUserResponse, error)
+	CreateUser(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*CreateBasicUserResponse, error)
 	// Get user by JWT
 	GetUser(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*AuthResponse, error)
 	// Public endpoints (no JWT)
@@ -55,6 +56,8 @@ type UserServiceClient interface {
 	LoginUser(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error)
 	// Refresh token
 	RefreshToken(ctx context.Context, in *RefreshRequest, opts ...grpc.CallOption) (*LoginResponse, error)
+	// User Verification
+	UserVerification(ctx context.Context, in *UserVerificationRequest, opts ...grpc.CallOption) (*UserVerificationResponse, error)
 }
 
 type userServiceClient struct {
@@ -105,9 +108,9 @@ func (c *userServiceClient) DeleteUser(ctx context.Context, in *DeleteUserReques
 	return out, nil
 }
 
-func (c *userServiceClient) CreateUser(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*CreateUserResponse, error) {
+func (c *userServiceClient) CreateUser(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*CreateBasicUserResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(CreateUserResponse)
+	out := new(CreateBasicUserResponse)
 	err := c.cc.Invoke(ctx, UserService_CreateUser_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -145,6 +148,16 @@ func (c *userServiceClient) RefreshToken(ctx context.Context, in *RefreshRequest
 	return out, nil
 }
 
+func (c *userServiceClient) UserVerification(ctx context.Context, in *UserVerificationRequest, opts ...grpc.CallOption) (*UserVerificationResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UserVerificationResponse)
+	err := c.cc.Invoke(ctx, UserService_UserVerification_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility.
@@ -161,7 +174,7 @@ type UserServiceServer interface {
 	// Delete user
 	DeleteUser(context.Context, *DeleteUserRequest) (*DeleteUserResponse, error)
 	// Create/Register user
-	CreateUser(context.Context, *CreateUserRequest) (*CreateUserResponse, error)
+	CreateUser(context.Context, *CreateUserRequest) (*CreateBasicUserResponse, error)
 	// Get user by JWT
 	GetUser(context.Context, *Empty) (*AuthResponse, error)
 	// Public endpoints (no JWT)
@@ -169,6 +182,8 @@ type UserServiceServer interface {
 	LoginUser(context.Context, *LoginRequest) (*LoginResponse, error)
 	// Refresh token
 	RefreshToken(context.Context, *RefreshRequest) (*LoginResponse, error)
+	// User Verification
+	UserVerification(context.Context, *UserVerificationRequest) (*UserVerificationResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -191,7 +206,7 @@ func (UnimplementedUserServiceServer) ListUsers(context.Context, *ListUsersReque
 func (UnimplementedUserServiceServer) DeleteUser(context.Context, *DeleteUserRequest) (*DeleteUserResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteUser not implemented")
 }
-func (UnimplementedUserServiceServer) CreateUser(context.Context, *CreateUserRequest) (*CreateUserResponse, error) {
+func (UnimplementedUserServiceServer) CreateUser(context.Context, *CreateUserRequest) (*CreateBasicUserResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateUser not implemented")
 }
 func (UnimplementedUserServiceServer) GetUser(context.Context, *Empty) (*AuthResponse, error) {
@@ -202,6 +217,9 @@ func (UnimplementedUserServiceServer) LoginUser(context.Context, *LoginRequest) 
 }
 func (UnimplementedUserServiceServer) RefreshToken(context.Context, *RefreshRequest) (*LoginResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RefreshToken not implemented")
+}
+func (UnimplementedUserServiceServer) UserVerification(context.Context, *UserVerificationRequest) (*UserVerificationResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UserVerification not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 func (UnimplementedUserServiceServer) testEmbeddedByValue()                     {}
@@ -368,11 +386,29 @@ func _UserService_RefreshToken_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_UserVerification_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserVerificationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).UserVerification(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_UserVerification_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).UserVerification(ctx, req.(*UserVerificationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var UserService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "UserService",
+	ServiceName: "user.v1.UserService",
 	HandlerType: (*UserServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -406,6 +442,152 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RefreshToken",
 			Handler:    _UserService_RefreshToken_Handler,
+		},
+		{
+			MethodName: "UserVerification",
+			Handler:    _UserService_UserVerification_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "user-proto/proto/user.proto",
+}
+
+const (
+	NotificationService_GetNotificationIntegrationsById_FullMethodName = "/user.v1.NotificationService/GetNotificationIntegrationsById"
+	NotificationService_GetNotificationEventsById_FullMethodName       = "/user.v1.NotificationService/GetNotificationEventsById"
+)
+
+// NotificationServiceClient is the client API for NotificationService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type NotificationServiceClient interface {
+	// Gets a notification integration by their unique ID or provider.
+	GetNotificationIntegrationsById(ctx context.Context, in *NotificationIntegrationsRequest, opts ...grpc.CallOption) (*NotificationIntegrations, error)
+	GetNotificationEventsById(ctx context.Context, in *NotificationEventsRequest, opts ...grpc.CallOption) (*NotificationEvents, error)
+}
+
+type notificationServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewNotificationServiceClient(cc grpc.ClientConnInterface) NotificationServiceClient {
+	return &notificationServiceClient{cc}
+}
+
+func (c *notificationServiceClient) GetNotificationIntegrationsById(ctx context.Context, in *NotificationIntegrationsRequest, opts ...grpc.CallOption) (*NotificationIntegrations, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(NotificationIntegrations)
+	err := c.cc.Invoke(ctx, NotificationService_GetNotificationIntegrationsById_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *notificationServiceClient) GetNotificationEventsById(ctx context.Context, in *NotificationEventsRequest, opts ...grpc.CallOption) (*NotificationEvents, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(NotificationEvents)
+	err := c.cc.Invoke(ctx, NotificationService_GetNotificationEventsById_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// NotificationServiceServer is the server API for NotificationService service.
+// All implementations must embed UnimplementedNotificationServiceServer
+// for forward compatibility.
+type NotificationServiceServer interface {
+	// Gets a notification integration by their unique ID or provider.
+	GetNotificationIntegrationsById(context.Context, *NotificationIntegrationsRequest) (*NotificationIntegrations, error)
+	GetNotificationEventsById(context.Context, *NotificationEventsRequest) (*NotificationEvents, error)
+	mustEmbedUnimplementedNotificationServiceServer()
+}
+
+// UnimplementedNotificationServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedNotificationServiceServer struct{}
+
+func (UnimplementedNotificationServiceServer) GetNotificationIntegrationsById(context.Context, *NotificationIntegrationsRequest) (*NotificationIntegrations, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetNotificationIntegrationsById not implemented")
+}
+func (UnimplementedNotificationServiceServer) GetNotificationEventsById(context.Context, *NotificationEventsRequest) (*NotificationEvents, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetNotificationEventsById not implemented")
+}
+func (UnimplementedNotificationServiceServer) mustEmbedUnimplementedNotificationServiceServer() {}
+func (UnimplementedNotificationServiceServer) testEmbeddedByValue()                             {}
+
+// UnsafeNotificationServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to NotificationServiceServer will
+// result in compilation errors.
+type UnsafeNotificationServiceServer interface {
+	mustEmbedUnimplementedNotificationServiceServer()
+}
+
+func RegisterNotificationServiceServer(s grpc.ServiceRegistrar, srv NotificationServiceServer) {
+	// If the following call pancis, it indicates UnimplementedNotificationServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&NotificationService_ServiceDesc, srv)
+}
+
+func _NotificationService_GetNotificationIntegrationsById_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NotificationIntegrationsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NotificationServiceServer).GetNotificationIntegrationsById(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NotificationService_GetNotificationIntegrationsById_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NotificationServiceServer).GetNotificationIntegrationsById(ctx, req.(*NotificationIntegrationsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NotificationService_GetNotificationEventsById_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(NotificationEventsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NotificationServiceServer).GetNotificationEventsById(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NotificationService_GetNotificationEventsById_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NotificationServiceServer).GetNotificationEventsById(ctx, req.(*NotificationEventsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// NotificationService_ServiceDesc is the grpc.ServiceDesc for NotificationService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var NotificationService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "user.v1.NotificationService",
+	HandlerType: (*NotificationServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetNotificationIntegrationsById",
+			Handler:    _NotificationService_GetNotificationIntegrationsById_Handler,
+		},
+		{
+			MethodName: "GetNotificationEventsById",
+			Handler:    _NotificationService_GetNotificationEventsById_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

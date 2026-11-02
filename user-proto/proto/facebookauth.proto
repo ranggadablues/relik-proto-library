@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package facebookauth;
+option go_package = ".;pb";
+
+// Request from client (Next.js)
+message FacebookLoginRequest {
+  string code = 1;
+}
+
+// Profile object from Facebook
+message UserProfile {
+  string id = 1;
+  string name = 2;
+  string email = 3;
+}
+
+message FacebookAuthTokens {
+	string access_token = 1;
+	int64 expires_at = 2;
+	string refresh_token = 3;
+	int64 refresh_expires_at = 4;
+}
+
+// Server response back to frontend
+message FacebookAuthResponse {
+  FacebookAuthTokens tokens = 1;
+  UserProfile profile = 2;
+}
+
+// gRPC auth service definition
+service FacebookAuthService {
+  rpc FacebookLogin (FacebookLoginRequest) returns (FacebookAuthResponse);
+}
